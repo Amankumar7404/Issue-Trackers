@@ -19,16 +19,11 @@ function EditProject() {
       try {
         const response = await api.get(`/projects/${id}/`);
 
-        console.log("PROJECT TO EDIT:", response.data);
-
         setTitle(response.data.title || "");
         setDescription(response.data.description || "");
 
         setLoading(false);
       } catch (error) {
-        console.log("EDIT PROJECT LOAD ERROR:", error);
-        console.log("RESPONSE:", error.response);
-
         setMessage(getErrorMessage(error));
         setLoading(false);
       }
@@ -49,22 +44,13 @@ function EditProject() {
     setMessage("");
 
     try {
-      const response = await api.patch(`/projects/${id}/`, {
+      await api.patch(`/projects/${id}/`, {
         title: title.trim(),
         description: description.trim(),
       });
 
-      console.log("PROJECT UPDATED:", response.data);
-
-      setMessage("Project updated successfully! ✅");
-
-      setTimeout(() => {
-        navigate(`/projects/${id}`);
-      }, 600);
+      navigate(`/projects/${id}`);
     } catch (error) {
-      console.log("UPDATE PROJECT ERROR:", error);
-      console.log("RESPONSE:", error.response);
-
       setMessage(getErrorMessage(error));
     } finally {
       setSaving(false);

@@ -33,7 +33,7 @@ function CreateTask() {
     setMessage("");
 
     try {
-      const response = await api.post("/tasks/", {
+      await api.post("/tasks/", {
         project: Number(projectId),
         title: title.trim(),
         description: description.trim(),
@@ -42,17 +42,8 @@ function CreateTask() {
         due_date: dueDate,
       });
 
-      console.log("TASK CREATED:", response.data);
-
-      setMessage("Task created successfully! ✅");
-
-      setTimeout(() => {
-        navigate(`/projects/${projectId}`);
-      }, 600);
+      navigate(`/projects/${projectId}`);
     } catch (error) {
-      console.log("CREATE TASK ERROR:", error);
-      console.log("RESPONSE:", error.response);
-
       setMessage(getErrorMessage(error));
     } finally {
       setSaving(false);

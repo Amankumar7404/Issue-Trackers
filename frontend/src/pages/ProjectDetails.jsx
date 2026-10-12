@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import { getErrorMessage } from "../utils/errorHandler";
 
+const TASKS_PER_PAGE = 5;
+
 function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -11,6 +13,7 @@ function ProjectDetails() {
   const [tasks, setTasks] = useState([]);
 
   const [message, setMessage] = useState("Loading project...");
+  const [taskMessage, setTaskMessage] = useState("");
   const [tasksLoading, setTasksLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -51,14 +54,9 @@ function ProjectDetails() {
 
         const response = await api.get(`/projects/${id}/`);
 
-        console.log("PROJECT:", response.data);
-
         setProject(response.data);
         setMessage("");
       } catch (error) {
-        console.log("PROJECT ERROR:", error);
-        console.log("RESPONSE:", error.response);
-
         setMessage(getErrorMessage(error));
       }
     };
@@ -73,6 +71,7 @@ function ProjectDetails() {
     const fetchTasks = async () => {
       try {
         setTasksLoading(true);
+        setTaskMessage("");
 
         const params = new URLSearchParams();
 
@@ -120,22 +119,20 @@ function ProjectDetails() {
 
         const response = await api.get(`/tasks/?${params.toString()}`);
 
-        console.log("TASKS:", response.data);
-
         setTasks(response.data.results || []);
+        setTotalTaskCount(response.data.count || 0);
 
-        setTotalTaskCount(response.data.count);
-
-        setTotalPages(Math.ceil(response.data.count / 5));
+        setTotalPages(Math.ceil((response.data.count || 0) / TASKS_PER_PAGE));
 
         setHasNext(!!response.data.next);
-
         setHasPrevious(!!response.data.previous);
       } catch (error) {
-        console.log("TASK ERROR:", error);
-        console.log("RESPONSE:", error.response);
-
         setTasks([]);
+        setTotalTaskCount(0);
+        setTotalPages(1);
+        setHasNext(false);
+        setHasPrevious(false);
+        setTaskMessage(getErrorMessage(error));
       } finally {
         setTasksLoading(false);
       }
@@ -166,17 +163,11 @@ function ProjectDetails() {
     try {
       await api.delete(`/projects/${id}/`);
 
-      console.log("PROJECT DELETED:", id);
-
       alert("Project deleted successfully! ✅");
 
       navigate("/dashboard");
     } catch (error) {
-      console.log("DELETE PROJECT ERROR:", error);
-      console.log("RESPONSE:", error.response);
-
       alert(getErrorMessage(error));
-
       setDeleting(false);
     }
   };
@@ -226,7 +217,7 @@ function ProjectDetails() {
   };
 
   // ---------------------------------------
-  // INITIAL PROJECT LOADING
+  // INITIAL PROJECT LOADING / ERROR
   // ---------------------------------------
   if (message) {
     return (
@@ -344,11 +335,8 @@ function ProjectDetails() {
               onChange={(e) => handleStatusChange(e.target.value)}
             >
               <option value="ALL">All Statuses</option>
-
               <option value="TODO">TODO</option>
-
               <option value="IN_PROGRESS">IN PROGRESS</option>
-
               <option value="DONE">DONE</option>
             </select>
 
@@ -359,11 +347,8 @@ function ProjectDetails() {
               onChange={(e) => handlePriorityChange(e.target.value)}
             >
               <option value="ALL">All Priorities</option>
-
               <option value="LOW">LOW</option>
-
               <option value="MEDIUM">MEDIUM</option>
-
               <option value="HIGH">HIGH</option>
             </select>
 
@@ -374,16 +359,22 @@ function ProjectDetails() {
               onChange={(e) => handleSortChange(e.target.value)}
             >
               <option value="DUE_ASC">Due Date: Earliest First</option>
-
               <option value="DUE_DESC">Due Date: Latest First</option>
-
               <option value="PRIORITY">Priority: High to Low</option>
-
               <option value="NEWEST">Created: Newest First</option>
-
               <option value="OLDEST">Created: Oldest First</option>
             </select>
           </div>
+
+          {/* ---------------------------------------
+              TASK ERROR
+          --------------------------------------- */}
+          {taskMessage && !tasksLoading && (
+            <div className="state-card">
+              <div className="state-icon">⚠️</div>
+              <p>{taskMessage}</p>
+            </div>
+          )}
 
           {/* ---------------------------------------
               TASK LOADING
@@ -391,10 +382,9 @@ function ProjectDetails() {
           {tasksLoading ? (
             <div className="state-card">
               <div className="state-icon">⏳</div>
-
               <p>Loading tasks...</p>
             </div>
-          ) : tasks.length === 0 ? (
+          ) : taskMessage ? null : tasks.length === 0 ? (
             /* ---------------------------------------
                NO TASKS
             --------------------------------------- */
@@ -479,7 +469,6 @@ function ProjectDetails() {
 
                     <div className="task-card-footer">
                       <span>View Task</span>
-
                       <span>→</span>
                     </div>
                   </article>

@@ -1,21 +1,16 @@
-from rest_framework.parsers import MultiPartParser, FormParser
 from drf_spectacular.utils import extend_schema
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema
-
 
 from .serializers import (
-    SignupSerializer,
     LoginSerializer,
     ProfileSerializer,
+    SignupSerializer,
 )
-
-
-from drf_spectacular.utils import extend_schema
 
 
 class SignupView(APIView):
@@ -83,8 +78,6 @@ class ProfileView(APIView):
         responses=ProfileSerializer,
     )
     def put(self, request):
-        print(request.data)
-        print(request.FILES)
         serializer = ProfileSerializer(
             instance=request.user,
             data=request.data,

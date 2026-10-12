@@ -22,8 +22,6 @@ function EditTask() {
       try {
         const response = await api.get(`/tasks/${id}/`);
 
-        console.log("TASK TO EDIT:", response.data);
-
         setTitle(response.data.title || "");
         setDescription(response.data.description || "");
         setStatus(response.data.status || "TODO");
@@ -32,9 +30,6 @@ function EditTask() {
 
         setLoading(false);
       } catch (error) {
-        console.log("EDIT TASK LOAD ERROR:", error);
-        console.log("RESPONSE:", error.response);
-
         setMessage(getErrorMessage(error));
         setLoading(false);
       }
@@ -51,29 +46,25 @@ function EditTask() {
       return;
     }
 
+    if (!dueDate) {
+      setMessage("Due date is required.");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
 
     try {
-      const response = await api.patch(`/tasks/${id}/`, {
+      await api.patch(`/tasks/${id}/`, {
         title: title.trim(),
         description: description.trim(),
-        status: status,
-        priority: priority,
+        status,
+        priority,
         due_date: dueDate,
       });
 
-      console.log("TASK UPDATED:", response.data);
-
-      setMessage("Task updated successfully! ✅");
-
-      setTimeout(() => {
-        navigate(`/tasks/${id}`);
-      }, 600);
+      navigate(`/tasks/${id}`);
     } catch (error) {
-      console.log("UPDATE TASK ERROR:", error);
-      console.log("RESPONSE:", error.response);
-
       setMessage(getErrorMessage(error));
     } finally {
       setSaving(false);
@@ -154,7 +145,7 @@ function EditTask() {
                 onChange={(e) => setStatus(e.target.value)}
               >
                 <option value="TODO">TODO</option>
-                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                <option value="IN_PROGRESS">IN PROGRESS</option>
                 <option value="DONE">DONE</option>
               </select>
             </div>

@@ -24,22 +24,13 @@ function CreateProject() {
     setMessage("");
 
     try {
-      const response = await api.post("/projects/", {
+      await api.post("/projects/", {
         title: title.trim(),
         description: description.trim(),
       });
 
-      console.log("PROJECT CREATED:", response.data);
-
-      setMessage("Project created successfully! ✅");
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 600);
+      navigate("/dashboard");
     } catch (error) {
-      console.log("CREATE PROJECT ERROR:", error);
-      console.log("RESPONSE:", error.response);
-
       setMessage(getErrorMessage(error));
     } finally {
       setSaving(false);

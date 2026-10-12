@@ -22,31 +22,37 @@ function TaskDetails() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
 
-  // ---------------------------------------
-  // FETCH TASK
-  // ---------------------------------------
   useEffect(() => {
+    const fetchTask = async () => {
+      try {
+        const response = await api.get(`/tasks/${id}/`);
+
+        setTask(response.data);
+        setMessage("");
+      } catch (error) {
+        setMessage(getErrorMessage(error));
+      }
+    };
+
     fetchTask();
   }, [id]);
 
-  const fetchTask = async () => {
+  const refreshTask = async (isCommentAction = false) => {
     try {
       const response = await api.get(`/tasks/${id}/`);
-
-      console.log("TASK:", response.data);
 
       setTask(response.data);
       setMessage("");
     } catch (error) {
-      console.log("TASK ERROR:", error);
-      console.log("RESPONSE:", error.response);
-      setMessage(getErrorMessage(error));
+      if (isCommentAction) {
+        setCommentMessage(getErrorMessage(error));
+      } else {
+        setMessage(getErrorMessage(error));
+      }
     }
   };
 
-  // ---------------------------------------
   // ADD COMMENT
-  // ---------------------------------------
   const handleAddComment = async (e) => {
     e.preventDefault();
 
@@ -59,29 +65,23 @@ function TaskDetails() {
     setCommentMessage("");
 
     try {
-      const response = await api.post("/comments/", {
+      await api.post("/comments/", {
         task: Number(id),
-        content: comment,
+        content: comment.trim(),
       });
-
-      console.log("COMMENT CREATED:", response.data);
 
       setComment("");
       setCommentMessage("Comment added successfully! ✅");
 
-      await fetchTask();
+      await refreshTask(true);
     } catch (error) {
-      console.log("ADD COMMENT ERROR:", error);
-      console.log("RESPONSE:", error.response);
-      setMessage(getErrorMessage(error));
+      setCommentMessage(getErrorMessage(error));
     } finally {
       setAddingComment(false);
     }
   };
 
-  // ---------------------------------------
   // DELETE TASK
-  // ---------------------------------------
   const handleDeleteTask = async () => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${task.title}"?\n\nThis action cannot be undone.`,
@@ -96,22 +96,16 @@ function TaskDetails() {
     try {
       await api.delete(`/tasks/${id}/`);
 
-      console.log("TASK DELETED:", id);
-
       alert("Task deleted successfully! ✅");
 
       navigate(`/projects/${task.project}`);
     } catch (error) {
-      console.log("DELETE TASK ERROR:", error);
-      console.log("RESPONSE:", error.response);
       alert(getErrorMessage(error));
       setDeleting(false);
     }
   };
 
-  // ---------------------------------------
   // EDIT COMMENT
-  // ---------------------------------------
   const handleEditComment = async (commentId) => {
     if (!editingCommentText.trim()) {
       setCommentMessage("Comment cannot be empty.");
@@ -119,28 +113,21 @@ function TaskDetails() {
     }
 
     try {
-      const response = await api.patch(`/comments/${commentId}/`, {
+      await api.patch(`/comments/${commentId}/`, {
         content: editingCommentText.trim(),
       });
 
-      console.log("COMMENT UPDATED:", response.data);
-
       setEditingCommentId(null);
       setEditingCommentText("");
-
       setCommentMessage("Comment updated successfully! ✅");
 
-      await fetchTask();
+      await refreshTask();
     } catch (error) {
-      console.log("EDIT COMMENT ERROR:", error);
-      console.log("RESPONSE:", error.response);
-      setMessage(getErrorMessage(error));
+      setCommentMessage(getErrorMessage(error));
     }
   };
 
-  // ---------------------------------------
   // DELETE COMMENT
-  // ---------------------------------------
   const handleDeleteComment = async (commentId) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this comment?\n\nThis action cannot be undone.",
@@ -153,21 +140,14 @@ function TaskDetails() {
     try {
       await api.delete(`/comments/${commentId}/`);
 
-      console.log("COMMENT DELETED:", commentId);
-
       setCommentMessage("Comment deleted successfully! ✅");
 
-      await fetchTask();
+      await refreshTask();
     } catch (error) {
-      console.log("DELETE COMMENT ERROR:", error);
-      console.log("RESPONSE:", error.response);
-      setMessage(getErrorMessage(error));
+      setCommentMessage(getErrorMessage(error));
     }
   };
 
-  // ---------------------------------------
-  // INITIAL LOADING / ERROR
-  // ---------------------------------------
   if (message) {
     return (
       <main className="page">
@@ -184,16 +164,14 @@ function TaskDetails() {
   return (
     <main className="page">
       <div className="container">
-        {/* ---------------------------------------
-            BACK
-        --------------------------------------- */}
-        <button className="back-button" onClick={() => navigate(-1)}>
-          ← Back
+        <button
+          className="back-button"
+          onClick={() => navigate(`/projects/${task.project}`)}
+        >
+          ← Back to Project
         </button>
 
-        {/* ---------------------------------------
-            TASK HEADER
-        --------------------------------------- */}
+        {/* TASK HEADER */}
         <section className="detail-card task-detail-card">
           <div className="task-detail-header">
             <div>
@@ -220,39 +198,30 @@ function TaskDetails() {
             {task.description || "No description provided."}
           </p>
 
-          {/* ---------------------------------------
-              TASK METADATA
-          --------------------------------------- */}
+          {/* TASK METADATA */}
           <div className="task-detail-meta">
             <div className="meta-item">
               <span className="meta-label">Priority</span>
-
               <strong>{task.priority}</strong>
             </div>
 
             <div className="meta-item">
               <span className="meta-label">Due Date</span>
-
               <strong>{task.due_date}</strong>
             </div>
 
             <div className="meta-item">
               <span className="meta-label">Created</span>
-
               <strong>{new Date(task.created_at).toLocaleDateString()}</strong>
             </div>
 
             <div className="meta-item">
               <span className="meta-label">Updated</span>
-
               <strong>{new Date(task.updated_at).toLocaleDateString()}</strong>
             </div>
           </div>
 
-          {/* ---------------------------------------
-              TASK ACTIONS
-          --------------------------------------- */}
-          <br></br>
+          {/* TASK ACTIONS */}
           <div className="action-row">
             <button
               className="button button-secondary"
@@ -271,9 +240,7 @@ function TaskDetails() {
           </div>
         </section>
 
-        {/* ---------------------------------------
-            COMMENTS
-        --------------------------------------- */}
+        {/* COMMENTS */}
         <section className="comments-section">
           <div className="section-header">
             <div>
@@ -289,9 +256,7 @@ function TaskDetails() {
             </div>
           </div>
 
-          {/* ---------------------------------------
-              COMMENT LIST
-          --------------------------------------- */}
+          {/* COMMENT LIST */}
           {task.comments?.map((comment) => (
             <article key={comment.id} className="comment-card">
               <div className="comment-header">
@@ -312,9 +277,7 @@ function TaskDetails() {
                 </div>
               </div>
 
-              {/* ---------------------------------------
-                  EDITING COMMENT
-              --------------------------------------- */}
+              {/* EDITING COMMENT */}
               {editingCommentId === comment.id ? (
                 <>
                   <textarea
@@ -349,13 +312,11 @@ function TaskDetails() {
                   <p className="comment-content">{comment.content}</p>
 
                   {/* COMMENT ACTIONS */}
-                  <br></br>
                   <div className="action-row">
                     <button
                       className="button button-secondary"
                       onClick={() => {
                         setEditingCommentId(comment.id);
-
                         setEditingCommentText(comment.content);
                       }}
                     >
@@ -374,9 +335,7 @@ function TaskDetails() {
             </article>
           ))}
 
-          {/* ---------------------------------------
-              ADD COMMENT
-          --------------------------------------- */}
+          {/* ADD COMMENT */}
           <div className="comment-form-card">
             <h3>Add a Comment</h3>
 

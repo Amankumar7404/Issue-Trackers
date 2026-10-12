@@ -60,5 +60,8 @@ class Task(models.Model):
         auto_now=True,
     )
 
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
         return self.title

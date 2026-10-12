@@ -23,16 +23,11 @@ function Login() {
         password: password,
       });
 
-      console.log("LOGIN SUCCESS:", response.data);
-
       localStorage.setItem("access", response.data.access);
       localStorage.setItem("refresh", response.data.refresh);
 
       navigate("/dashboard");
     } catch (error) {
-      console.log("LOGIN ERROR:", error);
-      console.log("RESPONSE:", error.response);
-
       setMessage(getErrorMessage(error));
     } finally {
       setLoggingIn(false);

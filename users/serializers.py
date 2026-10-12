@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User
+from django.contrib.auth.password_validation import validate_password
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -15,6 +16,8 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"confirm_password": "Passwords do not match."}
             )
+
+        validate_password(password)
 
         return attrs
 

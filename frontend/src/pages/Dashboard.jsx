@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { getErrorMessage } from "../utils/errorHandler";
+
+const PROJECTS_PER_PAGE = 5;
 
 function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [message, setMessage] = useState("Loading projects...");
 
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -15,34 +17,37 @@ function Dashboard() {
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      setMessage("Loading projects...");
-
-      const response = await api.get(`/projects/?page=${currentPage}`);
-
-      console.log("PROJECT PAGE RESPONSE:", response.data);
-
-      // Projects of current page
-      setProjects(response.data.results || []);
-
-      // Pagination information
-      setTotalPages(Math.ceil(response.data.count / 5));
-      setHasNext(!!response.data.next);
-      setHasPrevious(!!response.data.previous);
-
-      setMessage("");
-    } catch (error) {
-      console.log("PROJECT ERROR:", error);
-      console.log("RESPONSE:", error.response);
-
-      setMessage("Could not load projects.");
-    }
-  }, [currentPage]);
-
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchProjects = async () => {
+      try {
+        const response = await api.get(`/projects/?page=${currentPage}`);
+
+        if (cancelled) {
+          return;
+        }
+
+        setProjects(response.data.results || []);
+        setTotalPages(Math.ceil(response.data.count / PROJECTS_PER_PAGE));
+        setHasNext(!!response.data.next);
+        setHasPrevious(!!response.data.previous);
+        setMessage("");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setMessage(getErrorMessage(error));
+      }
+    };
+
     fetchProjects();
-  }, [fetchProjects, location.key]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage]);
 
   return (
     <main className="page">

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
 });
 
 api.interceptors.request.use(
@@ -26,13 +26,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If the server returned 401, try refreshing the access token.
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       const refresh = localStorage.getItem("refresh");
 
-      // No refresh token means the user must log in again.
       if (!refresh) {
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
@@ -44,9 +46,9 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          "http://localhost:8000/api/token/refresh/",
+          `${api.defaults.baseURL}/token/refresh/`,
           {
-            refresh: refresh,
+            refresh,
           },
         );
 
@@ -54,12 +56,11 @@ api.interceptors.response.use(
 
         localStorage.setItem("access", newAccessToken);
 
+        originalRequest.headers = originalRequest.headers || {};
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         return api(originalRequest);
       } catch (refreshError) {
-        console.log("TOKEN REFRESH FAILED:", refreshError);
-
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
 
