@@ -23,3 +23,10 @@ media/
 
 # macOS
 .DS_Store
+
+# Django collected static files
+staticfiles/
+
+# Environment variables
+.env
+frontend/.env

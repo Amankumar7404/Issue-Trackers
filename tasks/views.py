@@ -8,7 +8,7 @@ from .serializers import TaskSerializer
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-
+    queryset = Task.objects.none()
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated, IsTaskOwner]
 
@@ -17,6 +17,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "priority", "due_date"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Task.objects.none()
+
         return Task.objects.filter(created_by=self.request.user)
 
     def perform_create(self, serializer):

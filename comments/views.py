@@ -8,11 +8,14 @@ from .serializers import CommentSerializer
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-
+    queryset = Comment.objects.none()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Comment.objects.none()
+
         return Comment.objects.filter(author=self.request.user).order_by("-created_at")
 
     def perform_create(self, serializer):

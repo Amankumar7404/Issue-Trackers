@@ -37,6 +37,7 @@ class SignupView(APIView):
 
 
 class LoginView(APIView):
+    serializer_class = LoginSerializer
 
     @extend_schema(request=LoginSerializer)
     def post(self, request):
